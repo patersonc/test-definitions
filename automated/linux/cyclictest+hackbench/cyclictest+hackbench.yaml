@@ -1,0 +1,64 @@
+metadata:
+    name: cyclictest+hackbench
+    format: "Lava-Test-Shell Test Definition 1.0"
+    description: "Run hackbench to get load and then measure latency with
+                  cyclictest"
+    maintainer:
+        - chris.paterson2@renesas.com
+    os:
+        - debian
+        - ubuntu
+        - fedora
+        - centos
+        - openembedded
+    scope:
+        - performance
+        - preempt-rt
+    environment:
+        - lava-test-shell
+    devices:
+        - hi6220-hikey
+        - apq8016-sbc
+        - mustang
+        - moonshot
+        - thunderX
+        - d03
+        - d05
+
+params:
+    H_ITERATION: "1000"
+    H_TARGET: "host"
+    # Sets the amount of data to send in each message
+    H_DATASIZE: "100"
+    # How many messages each sender/receiver pair should send
+    H_LOOPS: "100"
+    # Defines how many groups of senders and receivers should be started
+    H_GRPS: "10"
+    # Defines how many file descriptors each child should use.  Note that the
+    # effective number will be twice the amount you set here, as the sender
+    # and receiver children will each open the given amount of file descriptors.
+    H_FDS: "20"
+    # Sends the data via a pipe instead of the socket (default)
+    H_PIPE: "false"
+    # Each sender/receiver child will be a POSIX thread of the parent.
+    # The default is to run in process mode (-P)
+    H_THREADS: "false"
+    # Priority of highest prio thread.
+    C_PRIORITY: "99"
+    # Base interval of thread in us.
+    C_INTERVAL: "10000"
+    # Number of threads.
+    C_THREADS: "1"
+    # Number of loops.
+    C_LOOPS: "10000"
+
+run:
+    steps:
+        - cd ./automated/linux/cyclictest+hackbench/
+        # Hide output from hackbench as we're focusing on cyclictest
+        - "./hackbench.sh -i ${H_ITERATION} -t ${H_TARGET} -s ${H_DATASIZE}
+           -l ${H_LOOPS} -g ${H_GRPS} -f ${H_FDS} -p ${H_PIPE} -T ${H_THREADS}
+            > /dev/null &"
+        - " ./cyclictest.sh -p ${C_PRIORITY} -i ${C_INTERVAL} -t ${C_THREADS}
+           -l ${C_LOOPS}"
+        - ../../utils/send-to-lava.sh ./output/cyclictest_result.txt
